@@ -1,7 +1,7 @@
 ## Rscript wrapper for scaleboot::sbfit.
 ##
 ## Usage:
-##   Rscript scaleboot_fit.r --temp_dir=<dir> --models=<comma-separated>
+##   Rscript scaleboot.r --temp_dir=<dir> --models=<comma-separated>
 ##     --k=<int> --sk=<int> --select=<average|best>
 ##
 ## Reads from <temp_dir>:
@@ -50,7 +50,7 @@ for (arg in args) {
 }
 
 if (is.null(temp_dir) || is.null(models) || is.null(k) || is.null(sk) || is.null(select)) {
-    stop("Usage: Rscript scaleboot_fit.r --temp_dir=<dir> --models=<comma-separated> --k=<int> --sk=<int> --select=<average|best>")
+    stop("Usage: Rscript scaleboot.r --temp_dir=<dir> --models=<comma-separated> --k=<int> --sk=<int> --select=<average|best>")
 }
 
 bp_path <- file.path(temp_dir, "bp.csv")

@@ -378,7 +378,7 @@ class RScalebootClient:
     rscript_path : str, optional
         Executable used to invoke R. Defaults to ``"Rscript"``.
     script_path : str, optional
-        Path to the bundled ``scaleboot_fit.r`` script. If omitted, the
+        Path to the bundled ``scaleboot.r`` script. If omitted, the
         script next to this module is used.
     """
 
@@ -394,7 +394,7 @@ class RScalebootClient:
         """
         self.rscript_path = rscript_path
         self.script_path = script_path or os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "scaleboot_fit.r"
+            os.path.dirname(os.path.abspath(__file__)), "scaleboot.r"
         )
 
     def fit(self, scaleboot_input):
@@ -448,7 +448,7 @@ class RScalebootClient:
 
             if proc.returncode != 0:
                 raise RuntimeError(
-                    f"scaleboot_fit.r exited with status {proc.returncode}.\n"
+                    f"scaleboot.r exited with status {proc.returncode}.\n"
                     f"stdout: {proc.stdout}\nstderr: {proc.stderr}"
                 )
 
@@ -458,7 +458,7 @@ class RScalebootClient:
 
         if len(out_df) != len(scaleboot_input.hypothesis_ids):
             raise RuntimeError(
-                "scaleboot_fit.r result row count "
+                "scaleboot.r result row count "
                 f"({len(out_df)}) does not match the number of hypotheses "
                 f"submitted ({len(scaleboot_input.hypothesis_ids)})."
             )
