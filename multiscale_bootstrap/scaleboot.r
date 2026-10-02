@@ -13,9 +13,9 @@
 ##                column order as bp.csv.
 ##
 ## Writes to <temp_dir>:
-##   result.csv - columns au_pvalue, au_se, si_pvalue, si_se,
-##                selected_model, beta0, beta1, one row per hypothesis
-##                in the same order as the input hypothesis_ids.
+##   result.csv - columns hypothesis_id, au_pvalue, au_se, si_pvalue,
+##                si_se, selected_model, beta0, beta1, one row per
+##                hypothesis.
 
 if (!suppressWarnings(require(scaleboot, quietly = TRUE))) {
     stop("The R package 'scaleboot' is required but not installed.")
@@ -81,6 +81,7 @@ best_model <- vapply(hypothesis_ids, function(hid) {
 # Indexed explicitly by hypothesis_ids: pv's column order is not
 # guaranteed to match, so this fixes the row order of result.csv.
 result <- data.frame(
+    hypothesis_id = hypothesis_ids,
     au_pvalue = as.numeric(pv$pvalue[pv_row, hypothesis_ids]),
     au_se = as.numeric(pv$pvalue.sd[pv_row, hypothesis_ids]),
     si_pvalue = as.numeric(pv$pvalue[spv_row, hypothesis_ids]),

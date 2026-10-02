@@ -12,32 +12,20 @@ from ._bootstrap import (
 from ._hypotheses import (
     EdgeHypothesis,
     GraphHypothesis,
-    GraphHypothesisResult,
-    HypothesisResult,
-    compute_graph_hash,
     encode_edge_states,
 )
 from ._scaleboot import (
     RScalebootClient,
-    ScalebootInput,
-    ScalebootResult,
-    ScalebootRow,
     build_scaleboot_input,
 )
 
 __all__ = [
     "MultiScaleBootstrap",
-    "HypothesisResult",
-    "GraphHypothesisResult",
-    "EdgeHypothesis",
-    "GraphHypothesis",
-    "compute_graph_hash",
-    "encode_edge_states",
     "MultiScaleBootstrapResult",
     "SingleScaleBootstrapResult",
+    "EdgeHypothesis",
+    "GraphHypothesis",
+    "encode_edge_states",
     "RScalebootClient",
-    "ScalebootInput",
-    "ScalebootResult",
-    "ScalebootRow",
     "build_scaleboot_input",
 ]
