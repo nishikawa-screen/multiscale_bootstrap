@@ -21,20 +21,19 @@ class SingleScaleBootstrapResult:
     adjacency_matrices : ndarray, shape (n_success, d, d)
         Raw adjacency matrices of the successful replicates (``NaN`` marks a
         bidirected edge).
-    error : str or None
-        ``"ExceptionType: message"`` of the failure that stopped this scale,
-        or ``None`` when every replicate succeeded.
+    failures : list of (int, str)
+        ``(replicate_index, "ExceptionType: message")`` of each failed replicate.
     """
 
     def __init__(
-        self, scale_ratio, n_prime, sa, n_bootstrap, adjacency_matrices, error=None
+        self, scale_ratio, n_prime, sa, n_bootstrap, adjacency_matrices, failures=()
     ):
         self.scale_ratio = scale_ratio
         self.n_prime = n_prime
         self.sa = sa
         self.n_bootstrap = n_bootstrap
         self.adjacency_matrices_ = adjacency_matrices
-        self.error = error
+        self.failures = list(failures)
 
     @property
     def n_success(self):
@@ -42,9 +41,9 @@ class SingleScaleBootstrapResult:
         return len(self.adjacency_matrices_)
 
     @property
-    def is_valid(self):
-        """Whether at least one replicate was requested and all succeeded."""
-        return self.n_success > 0 and self.n_success == self.n_bootstrap
+    def n_failure(self):
+        """Number of failed replicates."""
+        return len(self.failures)
 
 
 class MultiScaleBootstrapResult:
@@ -75,8 +74,7 @@ class MultiScaleBootstrapResult:
         Returns
         -------
         pandas.DataFrame
-            Scale sizes, success counts, validity, and the error (if any)
-            that stopped the scale.
+            Scale sizes and the success and failure counts.
         """
         return pd.DataFrame(
             [
@@ -88,8 +86,7 @@ class MultiScaleBootstrapResult:
                     "sa": s.sa,
                     "n_bootstrap": s.n_bootstrap,
                     "n_success": s.n_success,
-                    "is_valid": s.is_valid,
-                    "error": s.error,
+                    "n_failure": s.n_failure,
                 }
                 for i, s in enumerate(self.scales)
             ]
@@ -111,10 +108,9 @@ class MultiScaleBootstrap:
         passed to scaleboot is ``sa = n / n_prime`` computed from the
         *actual* (rounded) ``n_prime``.
     n_bootstrap : int
-        Number of bootstrap replicates requested per scale. The first failed
-        fit stops the current scale; subsequent scales are still attempted.
-        Only scales completing every replicate are valid and used for the
-        bootstrap probabilities.
+        Number of bootstrap replicates requested per scale. A failed fit is
+        recorded in ``failures`` and the remaining replicates still run.
+        Bootstrap probabilities use only the successful replicates.
     random_state : int
         Seed for resampling. Model-internal randomness (e.g. ABIC's own
         ``seed``) is the caller's responsibility.
@@ -157,8 +153,8 @@ class MultiScaleBootstrap:
         for scale_ratio in self.scale_ratios:
             n_prime = int(round(scale_ratio * n))
             adjacency_matrices = []
-            error = None
-            for _ in range(self.n_bootstrap):
+            failures = []
+            for b in range(self.n_bootstrap):
                 resampled_X = X[rng.integers(0, n, size=n_prime)]
                 try:
                     self.model.fit(resampled_X)
@@ -166,9 +162,7 @@ class MultiScaleBootstrap:
                         np.array(self.model.adjacency_matrix_, dtype=float)
                     )
                 except Exception as exc:
-                    # 失敗は記録して、このスケールの残りの試行を打ち切る
-                    error = f"{type(exc).__name__}: {exc}"
-                    break
+                    failures.append((b, f"{type(exc).__name__}: {exc}"))
 
             scales.append(
                 SingleScaleBootstrapResult(
@@ -177,7 +171,7 @@ class MultiScaleBootstrap:
                     sa=n / n_prime,
                     n_bootstrap=self.n_bootstrap,
                     adjacency_matrices=np.array(adjacency_matrices).reshape(-1, d, d),
-                    error=error,
+                    failures=failures,
                 )
             )
 

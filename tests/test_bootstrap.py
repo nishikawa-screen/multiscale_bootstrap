@@ -18,8 +18,8 @@ def test_scale_sizes_and_sa():
     for s in result.scales:
         assert s.adjacency_matrices_.shape == (3, 2, 2)
         assert s.n_success == 3
-        assert s.is_valid
-        assert s.error is None
+        assert s.n_failure == 0
+        assert s.failures == []
 
 
 def test_variable_names_default_and_custom():
@@ -46,7 +46,7 @@ def test_same_random_state_gives_same_resamples():
     )
 
 
-def test_failure_stops_only_current_scale():
+def test_failure_does_not_stop_current_or_subsequent_scales():
     calls = []
 
     class FailsOnSecondFit:
@@ -60,26 +60,66 @@ def test_failure_stops_only_current_scale():
         FailsOnSecondFit(), scale_ratios=(0.5, 1.0), n_bootstrap=3
     ).bootstrap(np.ones((4, 2)))
 
-    assert calls == [2, 2, 4, 4, 4]
+    assert calls == [2, 2, 2, 4, 4, 4]
     failed, complete = result.scales
-    assert failed.n_success == 1
-    assert not failed.is_valid
-    assert failed.error == "RuntimeError: synthetic failure"
-    assert complete.is_valid
+    assert failed.adjacency_matrices_.shape == (2, 2, 2)
+    assert failed.n_success == 2
+    assert failed.n_failure == 1
+    assert failed.failures == [(1, "RuntimeError: synthetic failure")]
+    assert complete.n_success == 3
+    assert complete.n_failure == 0
+    assert complete.failures == []
 
     summary = result.scale_summary()
-    assert list(summary["is_valid"]) == [False, True]
-    assert list(summary["n_success"]) == [1, 3]
-    assert summary.loc[0, "error"] == "RuntimeError: synthetic failure"
+    assert list(summary.columns) == [
+        "scale_index", "scale_ratio", "n", "n_prime", "sa",
+        "n_bootstrap", "n_success", "n_failure",
+    ]
+    assert list(summary["n_success"]) == [2, 3]
+    assert list(summary["n_failure"]) == [1, 0]
+    assert (summary["n_success"] + summary["n_failure"] == summary["n_bootstrap"]).all()
 
 
-def test_zero_bootstrap_scale_is_not_valid():
+def test_multiple_failures_record_indices_and_only_successful_matrices():
+    class IntermittentModel:
+        def __init__(self):
+            self.calls = 0
+
+        def fit(self, X):
+            self.calls += 1
+            if self.calls in (1, 3, 4):
+                raise ValueError(f"failure {self.calls}")
+            self.adjacency_matrix_ = np.full((2, 2), self.calls, dtype=float)
+
+    model = IntermittentModel()
+    result = MultiScaleBootstrap(
+        model, scale_ratios=(1.0,), n_bootstrap=5
+    ).bootstrap(np.ones((4, 2)))
+
+    scale = result.scales[0]
+    assert model.calls == 5
+    assert scale.n_success == 2
+    assert scale.n_failure == 3
+    assert scale.failures == [
+        (0, "ValueError: failure 1"),
+        (2, "ValueError: failure 3"),
+        (3, "ValueError: failure 4"),
+    ]
+    np.testing.assert_array_equal(
+        scale.adjacency_matrices_, np.stack([np.full((2, 2), 2), np.full((2, 2), 5)])
+    )
+
+
+def test_zero_bootstrap_scale_has_no_successes_or_failures():
     result = MultiScaleBootstrap(
         ZeroModel(), scale_ratios=(1.0,), n_bootstrap=0
     ).bootstrap(np.ones((4, 2)))
 
-    assert result.scales[0].n_success == 0
-    assert not result.scales[0].is_valid
+    scale = result.scales[0]
+    assert scale.adjacency_matrices_.shape == (0, 2, 2)
+    assert scale.n_success == 0
+    assert scale.n_failure == 0
+    assert scale.failures == []
 
 
 def test_all_replicates_failing_gives_empty_scale():
@@ -93,4 +133,9 @@ def test_all_replicates_failing_gives_empty_scale():
 
     scale = result.scales[0]
     assert scale.adjacency_matrices_.shape == (0, 2, 2)
-    assert not scale.is_valid
+    assert scale.n_success == 0
+    assert scale.n_failure == 2
+    assert scale.failures == [
+        (0, "RuntimeError: synthetic failure"),
+        (1, "RuntimeError: synthetic failure"),
+    ]

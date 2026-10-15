@@ -1,0 +1,4 @@
+numpy>=2.2.6
+pandas>=3.0.6
+scikit-learn>=1.9.1
+lingam>=1.13.0

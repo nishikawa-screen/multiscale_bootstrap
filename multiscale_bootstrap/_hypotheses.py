@@ -1,7 +1,7 @@
 """Extract edge, arc, and graph hypotheses from bootstrap results.
 
 Every extractor returns bootstrap probabilities in the long format
-``bp_long`` with one row per (hypothesis, valid scale) and the columns
+``bp_long`` with one row per (hypothesis, scale) and the columns
 ``hypothesis_id``, ``scale_index``, ``sa``, ``nb`` and ``bp``. Hypothesis
 identifiers are ``"edge:from->to"``, ``"arc:lower<->higher"`` and
 ``"graph:<sha1>"``.
@@ -32,7 +32,7 @@ def encode_edge_states(adjacency, min_causal_effect=None):
         edge.
     min_causal_effect : float or None, optional
         Minimum absolute coefficient for a directed edge. ``None`` treats
-        every nonzero finite coefficient as directed.
+        every nonzero coefficient as directed.
 
     Returns
     -------
@@ -44,9 +44,7 @@ def encode_edge_states(adjacency, min_causal_effect=None):
         min_causal_effect = 0.0
 
     state = np.zeros(adjacency.shape, dtype=np.int8)
-    state[np.isfinite(adjacency) & (np.abs(adjacency) > min_causal_effect)] = (
-        STATE_DIRECTED
-    )
+    state[np.abs(np.nan_to_num(adjacency)) > min_causal_effect] = STATE_DIRECTED
     state[np.isnan(adjacency)] = STATE_BIDIRECTED
     return state
 
@@ -82,14 +80,15 @@ class EdgeHypothesis:
         Returns
         -------
         bp_long : pandas.DataFrame
-            Bootstrap probabilities of the valid scales. Directed edges have
+            Bootstrap probabilities of the scales with at least one successful
+            replicate (``nb`` is the success count). Directed edges have
             ``hypothesis_id="edge:from->to"`` and bidirected arcs
             ``"arc:lower<->higher"``.
         """
         d = len(result.variable_names)
         rows = []
         for scale_index, scale in enumerate(result.scales):
-            if not scale.is_valid:
+            if scale.n_success == 0:
                 continue
             states = encode_edge_states(scale.adjacency_matrices_, min_causal_effect)
             directed = (states == STATE_DIRECTED).mean(axis=0)
@@ -131,7 +130,8 @@ class GraphHypothesis:
         Returns
         -------
         bp_long : pandas.DataFrame
-            Bootstrap probabilities of the valid scales with
+            Bootstrap probabilities of the scales with at least one successful
+            replicate, with
             ``hypothesis_id="graph:<sha1>"``.
         graph_states : dict of str to ndarray
             State matrix of each graph, keyed by ``hypothesis_id``.
@@ -139,7 +139,7 @@ class GraphHypothesis:
         graph_states = {}
         counts = {}
         for scale_index, scale in enumerate(result.scales):
-            if not scale.is_valid:
+            if scale.n_success == 0:
                 continue
             counter = Counter()
             for state in encode_edge_states(
