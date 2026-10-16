@@ -1,6 +1,12 @@
-# multiscale_bootstrap
+# pyscaleboot
 
 This repository provides functions to perform multiscale bootstrap analysis for LiNGAM causal discovery results and estimate bootstrap probabilities for directed edges, bidirected arcs, and graphs.
+
+When the repository root is on Python's import path (for example, when the notebook is in that directory), import the public API with:
+
+```python
+from pyscaleboot import MultiScaleBootstrap
+```
 
 If you use functions in this repository, install the Python packages `numpy`, `pandas`, and `lingam`. For AU/SI p-values, install R, set the path to `Rscript`, and install [`scaleboot`](https://github.com/shimo-lab/scaleboot) from its official GitHub repository.
 

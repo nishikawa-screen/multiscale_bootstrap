@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from multiscale_bootstrap import (
+from pyscaleboot import (
     EdgeHypothesis,
     GraphHypothesis,
     MultiScaleBootstrapResult,

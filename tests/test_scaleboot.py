@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from multiscale_bootstrap import RScalebootClient, build_scaleboot_input
+from pyscaleboot import RScalebootClient, build_scaleboot_input
 
 
 def make_bp_long():
@@ -65,7 +65,7 @@ def test_r_scaleboot_client_returns_au_si_pvalues():
 
     assert list(result.columns) == [
         "hypothesis_id", "au_pvalue", "au_se", "si_pvalue", "si_se",
-        "selected_model", "beta0", "beta1",
+        "best_model", "beta0", "beta1",
     ]
     assert set(result["hypothesis_id"]) == {"signal", "flat"}
     assert result[["au_pvalue", "si_pvalue"]].stack().between(0, 1).all()

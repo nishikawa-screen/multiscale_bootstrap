@@ -1,6 +1,6 @@
 import numpy as np
 
-from multiscale_bootstrap import MultiScaleBootstrap
+from pyscaleboot import MultiScaleBootstrap
 
 
 class ZeroModel:
