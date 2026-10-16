@@ -14,8 +14,10 @@
 ##
 ## Writes to <temp_dir>:
 ##   result.csv - columns hypothesis_id, au_pvalue, au_se, si_pvalue,
-##                si_se, selected_model, beta0, beta1, one row per
+##                si_se, best_model, beta0, beta1, one row per
 ##                hypothesis.
+##   best_model is the minimum-AIC model from summary(), regardless of
+##   --select. P-values, standard errors and beta use --select instead.
 
 if (!suppressWarnings(require(scaleboot, quietly = TRUE))) {
     stop("The R package 'scaleboot' is required but not installed.")
@@ -86,7 +88,7 @@ result <- data.frame(
     au_se = as.numeric(pv$pvalue.sd[pv_row, hypothesis_ids]),
     si_pvalue = as.numeric(pv$pvalue[spv_row, hypothesis_ids]),
     si_se = as.numeric(pv$pvalue.sd[spv_row, hypothesis_ids]),
-    selected_model = best_model,
+    best_model = best_model,
     beta0 = as.numeric(pv$beta["beta0", hypothesis_ids]),
     beta1 = as.numeric(pv$beta["beta1", hypothesis_ids])
 )

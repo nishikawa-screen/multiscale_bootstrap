@@ -83,14 +83,14 @@ class RScalebootClient:
         k, sk : int, optional
             Orders used to report the AU (``k``) and SI (``sk``) p-values.
         select : {"average", "best"}, optional
-            How multiple ``models`` are combined.
+            How multiple models are combined.
 
         Returns
         -------
         pandas.DataFrame
             One row per hypothesis with the columns ``hypothesis_id``,
             ``au_pvalue``, ``au_se``, ``si_pvalue``, ``si_se``,
-            ``selected_model``, ``beta0`` and ``beta1``.
+            ``best_model``, ``beta0`` and ``beta1``.
         """
         with tempfile.TemporaryDirectory() as temp_dir:
             bp.to_csv(os.path.join(temp_dir, "bp.csv"), header=False)
